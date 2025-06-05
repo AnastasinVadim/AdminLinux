@@ -30,5 +30,5 @@ case "$planet" in
 		echo "Unknown planet"
 		exit 1
 		;;
-esac#!/bin/bash
+esac
 
