@@ -39,4 +39,4 @@ USER fastapiuser
 EXPOSE 8099
 
 # Command to run the FastAPI app
-CMD ["uvicorn", "main:app", "--host", "localhost", "--port", "8099"]
+CMD ["uvicorn", "main:app", "--host", "localhost", "--port", "8110"]
