@@ -14,7 +14,7 @@ podman pull vog333/admin:latest
 if podman container exists "$CONTAINER_NAME"; then
     echo "Removing existing container..."
     podman stop "$CONTAINER_NAME"
-    podman rm "$CONTAINER_NAME"
+    podman rm -f "$CONTAINER_NAME"
 fi
 
 # Run the container with host networking and always-restart policy
