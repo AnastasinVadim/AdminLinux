@@ -8,5 +8,5 @@ do
 		lines=$(wc -l < "$file")
 		echo "$file => $lines"
 	fi
-done#!/bin/bash
+done
 
