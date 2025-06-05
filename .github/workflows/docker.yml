@@ -57,7 +57,7 @@ jobs:
       - name: Run tests
         run: |
           docker run --network host \
-            -e TESTING=1 \
+            -e TESTING=0 \
             ${{ secrets.DOCKERHUB_USERNAME }}/admin:latest pytest -v ./tests/
 
       - name: Push to docker registry
