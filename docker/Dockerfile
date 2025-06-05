@@ -1,15 +1,42 @@
-FROM python:3.10-alpine AS builder
-WORKDIR /build
-RUN apk add --no-cache make
-COPY ./Makefile ./Makefile
-COPY ./pyproject.toml ./pyproject.toml
-RUN make install && make install-dev
+# === Stage 1: Builder ===
+FROM python:3.12-alpine AS builder
 
-
-FROM python:3.10-alpine AS runtime
+# Set working directory
 WORKDIR /app
-RUN apk add --no-cache make
-COPY . .
+
+# Copy application and test files
+COPY pyproject.toml ./
+COPY src/ ./src
+COPY tests/ ./tests  
+
+# Install dependencies
+RUN pip install --upgrade pip \
+    && pip install --prefix=/install .[test]  
+
+# === Stage 2: Runtime ===
+FROM python:3.12-alpine
+
+# Create non-root user
+RUN adduser -D fastapiuser
+
+# Set working directory
+WORKDIR /app
+
+# Copy installed dependencies from builder stage
 COPY --from=builder /install /usr/local
-EXPOSE 8110
-CMD ["make", "run"]
+
+# Copy application and test files from builder stage
+COPY --from=builder /app/src ./src
+COPY --from=builder /app/tests ./tests  
+
+# Set PYTHONPATH to /app so Python can find the src directory
+ENV PYTHONPATH=/app
+
+# Use non-root user
+USER fastapiuser
+
+# Expose port 8031 for the FastAPI app
+EXPOSE 8099
+
+# Command to run the FastAPI app
+CMD ["uvicorn", "main:app", "--host", "localhost", "--port", "8099"]
