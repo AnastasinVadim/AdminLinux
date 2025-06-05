@@ -19,18 +19,10 @@ fi
 
 # Run the container with host networking and always-restart policy
 echo "Starting new container..."
-if ! podman run -d \
-  --name "$CONTAINER_NAME" \
-  --network host \
-  --restart=always \
-  vog333/admin:latest; then
-    handle_podman_error
-    # Final attempt after recovery
-    podman run -d \
+podman run -d \
       --name "$CONTAINER_NAME" \
       --network host \
       --restart=always \
       vog333/admin:latest
-fi
 
 echo "Container '$CONTAINER_NAME' is now running."
