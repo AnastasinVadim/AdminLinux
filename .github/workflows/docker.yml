@@ -68,11 +68,11 @@ jobs:
             -e TESTING=0 \
             ${{ secrets.DOCKERHUB_USERNAME }}/admin:latest pytest -v ./tests/
 
-      - name: Push to docker registry
-        if: success()
-        run: |
-          docker login -u ${{ secrets.DOCKERHUB_USERNAME }} -p ${{ secrets.DOCKERHUB_PASSWORD }}
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/admin:latest
+     # - name: Push to docker registry
+        #if: success()
+        #run: |
+          #docker login -u ${{ secrets.DOCKERHUB_USERNAME }} -p ${{ secrets.DOCKERHUB_PASSWORD }}
+          #docker push ${{ secrets.DOCKERHUB_USERNAME }}/admin:latest
           
   deploy:
     runs-on: self-hosted
