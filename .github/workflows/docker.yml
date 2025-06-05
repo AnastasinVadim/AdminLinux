@@ -1,91 +1,82 @@
 name: docker
+
 on:
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+    branches: [ main ]
 
 jobs:
   build-and-push:
-    name: Build and push docker image
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+    # 1. Checkout code with full history 
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
 
-      - name: Login to docker hub
-        uses: docker/login-action@v3.3.0
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+    # 2. Build Docker image from custom path
+    - name: Build Docker image
+      run: | 
+        docker build \
+        -t ${{ secrets.DOCKERHUB_USERNAME }}/admintask:latest \
+        -f docker/Dockerfile \
+        docker/
 
-      - name: Setup docker buildx
-        uses: docker/setup-buildx-action@v3.6.1
-
-      - name: Build and push docker image
-        uses: docker/build-push-action@v6.7.0
-        with:
-          context: ./docker
-          push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/administration:latest
+        echo "Docker image built successfully"
+        docker images | grep ${{ secrets.DOCKERHUB_USERNAME }}/admintask
 
   test:
     runs-on: ubuntu-latest
-    needs: [ build-and-push ]
+    needs: build-and-push
     services:
       postgres:
-        image: postgres:alpine
+        image: postgres:15
         env:
-          POSTGRES_DB: kubsu
-          POSTGRES_PASSWORD: kubsu
-          POSTGRES_PORT: 5432
-          POSTGRES_USER: kubsu
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: testdb
         ports:
           - 5432:5432
-        options:
-          --health-cmd="pg_isready"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
+        options: --health-cmd pg_isready --health-interval 10s
+
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      
+      - name: Build app image
+        run: |
+          docker build \
+          -t ${{ secrets.DOCKERHUB_USERNAME }}/admintask:latest \
+          -f docker/Dockerfile \
+          docker/
 
-      - name: Pull docker image
-        run: docker pull ${{ secrets.DOCKERHUB_USERNAME }}/administration:latest
+          echo "Docker image built successfully"
+          docker images | grep ${{ secrets.DOCKERHUB_USERNAME }}/admintask
 
+      
       - name: Run tests
         run: |
-          docker run --rm \
-            --network host \
-            -e DATABASE_URL=${{ secrets.DATABASE_URL }} \
-            ${{ secrets.DOCKERHUB_USERNAME }}/administration:latest \
-            sh -c "while ! nc -z localhost 5432; do sleep 1; done && make test"
-      - name: Cleanup
-        run: |
-          docker rmi ${{ secrets.DOCKERHUB_USERNAME }}/administration:latest \
-            && docker system prune -af 
+          docker run --network host \
+            -e TESTING=1 \
+            ${{ secrets.DOCKERHUB_USERNAME }}/admintask:latest pytest -v ./tests/
 
+      - name: Push to docker registry
+        if: success()
+        run: |
+          docker login -u ${{ secrets.DOCKERHUB_USERNAME }} -p ${{ secrets.DOCKERHUB_PASSWORD }}
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/admintask:latest
+          
   deploy:
     runs-on: self-hosted
-    env:
-      CONTAINER_NAME: app
     needs: [ test ]
     steps:
-      - name: Set up ssh agent
-        uses: webfactory/ssh-agent@v0.9.0
+      - name: Execute ssh command via using private key
+        uses: appleboy/ssh-action@master
         with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-      - name: Deploy to server
-        run: |
-          ssh -o StrictHostKeyChecking=no \
-            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
-            -p ${{ secrets.SSH_PORT }} \
-            "podman pull ${{ secrets.DOCKERHUB_USERNAME }}/administration:latest \
-             && podman stop $CONTAINER_NAME || true \
-             && podman rm $CONTAINER_NAME || true \
-             && podman run -d \
-                --network host \
-                --name $CONTAINER_NAME \
-                -e DATABASE_URL='${{ secrets.DATABASE_URL }}' \
-                ${{ secrets.DOCKERHUB_USERNAME }}/administration:latest"
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script: cd $HOME/tasks/docker && ./start.sh
+ 
+    
