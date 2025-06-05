@@ -19,12 +19,12 @@ jobs:
     - name: Build Docker image
       run: | 
         docker build \
-        -t ${{ secrets.DOCKERHUB_USERNAME }}/admintask:latest \
+        -t ${{ secrets.DOCKERHUB_USERNAME }}/admin:latest \
         -f docker/Dockerfile \
         docker/
 
         echo "Docker image built successfully"
-        docker images | grep ${{ secrets.DOCKERHUB_USERNAME }}/admintask
+        docker images | grep ${{ secrets.DOCKERHUB_USERNAME }}/admin
 
   test:
     runs-on: ubuntu-latest
@@ -46,25 +46,25 @@ jobs:
       - name: Build app image
         run: |
           docker build \
-          -t ${{ secrets.DOCKERHUB_USERNAME }}/admintask:latest \
+          -t ${{ secrets.DOCKERHUB_USERNAME }}/admin:latest \
           -f docker/Dockerfile \
           docker/
 
           echo "Docker image built successfully"
-          docker images | grep ${{ secrets.DOCKERHUB_USERNAME }}/admintask
+          docker images | grep ${{ secrets.DOCKERHUB_USERNAME }}/admin
 
       
       - name: Run tests
         run: |
           docker run --network host \
             -e TESTING=1 \
-            ${{ secrets.DOCKERHUB_USERNAME }}/admintask:latest pytest -v ./tests/
+            ${{ secrets.DOCKERHUB_USERNAME }}/admin:latest pytest -v ./tests/
 
       - name: Push to docker registry
         if: success()
         run: |
           docker login -u ${{ secrets.DOCKERHUB_USERNAME }} -p ${{ secrets.DOCKERHUB_PASSWORD }}
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/admintask:latest
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/admin:latest
           
   deploy:
     runs-on: self-hosted
