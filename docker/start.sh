@@ -8,7 +8,6 @@ CONTAINER_NAME="main_container"
 
 # Pull the latest image
 echo "Pulling latest image..."
-podman system migrate
 podman pull vog333/admin:latest
 
 # Stop and remove existing container if it exists
