@@ -10,5 +10,5 @@ do
 	sleep 1
 done
 
-echo "fix.txt created"#!/bin/bash
+echo "fix.txt created"
 
