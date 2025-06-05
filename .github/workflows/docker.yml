@@ -25,6 +25,11 @@ jobs:
 
         echo "Docker image built successfully"
         docker images | grep ${{ secrets.DOCKERHUB_USERNAME }}/admin
+    # 3. Push
+    - name: Push to docker registry
+      run: |
+        docker login -u ${{ secrets.DOCKERHUB_USERNAME }} -p ${{ secrets.DOCKERHUB_PASSWORD }}
+        docker push ${{ secrets.DOCKERHUB_USERNAME }}/admin:latest
 
   test:
     runs-on: ubuntu-latest
@@ -43,8 +48,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Build app image
+      - name: Pull and build app image
         run: |
+          docker pull ${{ secrets.DOCKERHUB_USERNAME }}/admin:latest \
           docker build \
           -t ${{ secrets.DOCKERHUB_USERNAME }}/admin:latest \
           -f docker/Dockerfile \
