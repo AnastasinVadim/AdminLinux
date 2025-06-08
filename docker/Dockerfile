@@ -35,8 +35,8 @@ ENV PYTHONPATH=/app
 # Use non-root user
 USER fastapiuser
 
-# Expose port 8031 for the FastAPI app
-EXPOSE 8099
+# Expose port 8110 for the FastAPI app
+EXPOSE 8110
 
 # Command to run the FastAPI app
 CMD ["uvicorn", "main:app", "--host", "localhost", "--port", "8110"]
